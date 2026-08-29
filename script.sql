@@ -154,3 +154,9 @@ INSERT INTO categories (nom, description) VALUES
     ('Plats', 'Plats principaux du restaurant'),
     ('Boissons', 'Boissons fraîches et chaudes'),
     ('Desserts', 'Desserts et pâtisseries');
+
+
+UPDATE utilisateurs 
+SET mot_de_passe = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9' 
+WHERE email = 'admin@saveur221.sn';
+
