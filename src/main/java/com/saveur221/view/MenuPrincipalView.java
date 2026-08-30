@@ -1,26 +1,30 @@
 package com.saveur221.view;
 
 import com.saveur221.entities.Categorie;
+import com.saveur221.entities.Commande;
 import com.saveur221.entities.Produit;
 import com.saveur221.entities.Utilisateur;
 import com.saveur221.enums.RoleType;
+import com.saveur221.enums.StatutCommande;
 import com.saveur221.exceptions.EntityNotFoundException;
 import com.saveur221.exceptions.ValidationException;
 import com.saveur221.service.CategorieService;
+import com.saveur221.service.CommandeService;
 import com.saveur221.service.ProduitService;
 
 import java.sql.SQLException;
 import java.util.List;
 
 /**
-  *  Menu principal affiché après connexion. Le GERANT et l'ADMIN partagent
+ * Menu principal affiché après connexion. Le GERANT et l'ADMIN partagent
  * le même espace de gestion (catégories, produits, stock, commandes,
  * paiements, statistiques) ; l'ADMIN a en plus la gestion des utilisateurs.
- *
+ * 
  * Seule classe de la couche View autorisée à appeler la couche Service
  * (contrainte du prof) : elle orchestre chaque sous-menu (gererCategories,
- * gererProduits, ...) et délègue l'affichage/la saisie aux vues dédiées
- * (CategorieView, ProduitView, ...) qui elles ne connaissent aucun Service.
+ * gererProduits, gererCommandes, ...) et délègue l'affichage/la saisie aux
+ * vues dédiées (CategorieView, ProduitView, CommandeView, ...) qui elles
+ * ne connaissent aucun Service.
  */
 public class MenuPrincipalView {
 
@@ -29,19 +33,23 @@ public class MenuPrincipalView {
     // Services
     private final CategorieService categorieService;
     private final ProduitService produitService;
+    private final CommandeService commandeService;
 
     // Vues (pur affichage / saisie)
     private final CategorieView categorieView;
     private final ProduitView produitView;
+    private final CommandeView commandeView;
 
     public MenuPrincipalView(Utilisateur utilisateurConnecte) {
         this.utilisateurConnecte = utilisateurConnecte;
 
         this.categorieService = new CategorieService();
         this.produitService = new ProduitService();
+        this.commandeService = new CommandeService();
 
         this.categorieView = new CategorieView();
         this.produitView = new ProduitView();
+        this.commandeView = new CommandeView();
     }
 
     public void afficher() {
@@ -70,7 +78,7 @@ public class MenuPrincipalView {
                 case 1 -> gererCategories();
                 case 2 -> gererProduits();
                 case 3 -> gererStock();
-                case 4 -> afficherFonctionnaliteAVenir("Gestion des commandes");
+                case 4 -> gererCommandes();
                 case 5 -> afficherFonctionnaliteAVenir("Paiements");
                 case 6 -> afficherFonctionnaliteAVenir("Statistiques");
                 case 7 -> {
@@ -216,6 +224,60 @@ public class MenuPrincipalView {
                 produitView.afficherMessage("⚠ " + e.getMessage());
             } catch (SQLException e) {
                 produitView.afficherMessage("⚠ Erreur base de données : " + e.getMessage());
+            }
+        } while (choix != 0);
+    }
+
+    // ==================== COMMANDES ====================
+
+    private void gererCommandes() {
+        int choix;
+        do {
+            choix = commandeView.demanderChoix();
+            try {
+                switch (choix) {
+                    case 1 -> commandeView.afficherCommandes(commandeService.lister());
+                    case 2 -> {
+                        StatutCommande statut = commandeView.demanderStatutPourFiltre();
+                        commandeView.afficherCommandes(commandeService.filtrerParStatut(statut));
+                    }
+                    case 3 -> {
+                        String motCle = commandeView.demanderMotCle();
+                        commandeView.afficherCommandes(commandeService.rechercher(motCle));
+                    }
+                    case 4 -> {
+                        int id = commandeView.demanderId("consulter");
+                        commandeView.afficherDetailCommande(commandeService.consulter(id));
+                    }
+                    case 5 -> {
+                        int id = commandeView.demanderId("faire avancer");
+                        Commande commande = commandeService.consulter(id);
+                        StatutCommande[] valeurs = StatutCommande.values();
+
+                        if (commande.getStatut().ordinal() >= StatutCommande.RETIREE.ordinal()) {
+                            commandeView.afficherMessage("Cette commande est déjà terminée (" + commande.getStatut() + ").");
+                        } else {
+                            StatutCommande suivant = valeurs[commande.getStatut().ordinal() + 1];
+                            if (commandeView.confirmerChangementStatut(commande.getStatut(), suivant)) {
+                                commandeService.changerStatut(id, suivant);
+                                commandeView.afficherMessage("Statut mis à jour : " + suivant);
+                            }
+                        }
+                    }
+                    case 6 -> {
+                        int id = commandeView.demanderId("annuler");
+                        if (commandeView.confirmerAnnulation()) {
+                            commandeService.annuler(id);
+                            commandeView.afficherMessage("Commande annulée, stock restitué.");
+                        }
+                    }
+                    case 0 -> { /* retour */ }
+                    default -> commandeView.afficherMessage("Option invalide.");
+                }
+            } catch (ValidationException | EntityNotFoundException e) {
+                commandeView.afficherMessage("⚠ " + e.getMessage());
+            } catch (SQLException e) {
+                commandeView.afficherMessage("⚠ Erreur base de données : " + e.getMessage());
             }
         } while (choix != 0);
     }

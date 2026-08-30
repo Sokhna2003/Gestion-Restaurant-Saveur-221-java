@@ -172,3 +172,83 @@ INSERT INTO produits (libelle, description, prix, quantite_stock, seuil_alerte, 
 ('Salade de fruits', 'Fruits frais de saison', 1500, 0, 5, 3, FALSE, NULL); -- rupture
 
 
+-- Données de test : clients + commandes dans différents statuts
+-- À exécuter après avoir déjà les produits en base
+-- Utilise des sous-requêtes sur le libellé des produits, donc fonctionne
+-- même si les id réels diffèrent chez toi.
+
+-- ---------------------------------------------------------------------
+-- Clients de test (mot de passe en clair pour simplifier les tests console ;
+-- à hacher côté PHP comme pour les utilisateurs internes)
+-- ---------------------------------------------------------------------
+INSERT INTO clients (nom, prenom, email, telephone, adresse, mot_de_passe) VALUES
+('Diallo', 'Fatou', 'fatou.diallo@test.sn', '771234567', 'Dakar, Sénégal', 'test1234'),
+('Ndiaye', 'Moussa', 'moussa.ndiaye@test.sn', '781234567', 'Thiès, Sénégal', 'test1234'),
+('Sow', 'Awa', 'awa.sow@test.sn', '761234567', 'Rufisque, Sénégal', 'test1234');
+
+-- ---------------------------------------------------------------------
+-- Commande 1 : EN_ATTENTE (Fatou) - 2x Thieboudienne + 1x Bissap
+-- ---------------------------------------------------------------------
+INSERT INTO commandes (client_id, statut, montant_total)
+VALUES ((SELECT id FROM clients WHERE email = 'fatou.diallo@test.sn'), 'EN_ATTENTE', 0);
+SET @cmd1 = LAST_INSERT_ID();
+
+INSERT INTO ligne_commandes (commande_id, produit_id, quantite, prix_unitaire)
+VALUES
+(@cmd1, (SELECT id FROM produits WHERE libelle = 'Thieboudienne'), 2,
+    (SELECT prix FROM produits WHERE libelle = 'Thieboudienne')),
+(@cmd1, (SELECT id FROM produits WHERE libelle = 'Bissap'), 1,
+    (SELECT prix FROM produits WHERE libelle = 'Bissap'));
+
+UPDATE commandes SET montant_total =
+    (SELECT SUM(quantite * prix_unitaire) FROM ligne_commandes WHERE commande_id = @cmd1)
+    WHERE id = @cmd1;
+
+-- ---------------------------------------------------------------------
+-- Commande 2 : EN_PREPARATION (Moussa) - 1x Yassa Poulet
+-- ---------------------------------------------------------------------
+INSERT INTO commandes (client_id, statut, montant_total)
+VALUES ((SELECT id FROM clients WHERE email = 'moussa.ndiaye@test.sn'), 'EN_PREPARATION', 0);
+SET @cmd2 = LAST_INSERT_ID();
+
+INSERT INTO ligne_commandes (commande_id, produit_id, quantite, prix_unitaire)
+VALUES
+(@cmd2, (SELECT id FROM produits WHERE libelle = 'Yassa Poulet'), 1,
+    (SELECT prix FROM produits WHERE libelle = 'Yassa Poulet'));
+
+UPDATE commandes SET montant_total =
+    (SELECT SUM(quantite * prix_unitaire) FROM ligne_commandes WHERE commande_id = @cmd2)
+    WHERE id = @cmd2;
+
+-- ---------------------------------------------------------------------
+-- Commande 3 : PRETE (Awa) - 3x Thiakry
+-- ---------------------------------------------------------------------
+INSERT INTO commandes (client_id, statut, montant_total)
+VALUES ((SELECT id FROM clients WHERE email = 'awa.sow@test.sn'), 'PRETE', 0);
+SET @cmd3 = LAST_INSERT_ID();
+
+INSERT INTO ligne_commandes (commande_id, produit_id, quantite, prix_unitaire)
+VALUES
+(@cmd3, (SELECT id FROM produits WHERE libelle = 'Thiakry'), 3,
+    (SELECT prix FROM produits WHERE libelle = 'Thiakry'));
+
+UPDATE commandes SET montant_total =
+    (SELECT SUM(quantite * prix_unitaire) FROM ligne_commandes WHERE commande_id = @cmd3)
+    WHERE id = @cmd3;
+
+-- ---------------------------------------------------------------------
+-- Commande 4 : RETIREE (Fatou) - 1x Mafé
+-- Utile pour tester qu'on NE PEUT PAS changer son statut ni l'annuler
+-- ---------------------------------------------------------------------
+INSERT INTO commandes (client_id, statut, montant_total)
+VALUES ((SELECT id FROM clients WHERE email = 'fatou.diallo@test.sn'), 'RETIREE', 0);
+SET @cmd4 = LAST_INSERT_ID();
+
+INSERT INTO ligne_commandes (commande_id, produit_id, quantite, prix_unitaire)
+VALUES
+(@cmd4, (SELECT id FROM produits WHERE libelle = 'Mafé'), 1,
+    (SELECT prix FROM produits WHERE libelle = 'Mafé'));
+
+UPDATE commandes SET montant_total =
+    (SELECT SUM(quantite * prix_unitaire) FROM ligne_commandes WHERE commande_id = @cmd4)
+    WHERE id = @cmd4;
