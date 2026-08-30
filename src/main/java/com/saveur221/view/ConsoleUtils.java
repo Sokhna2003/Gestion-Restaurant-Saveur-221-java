@@ -18,6 +18,20 @@ public class ConsoleUtils {
         return scanner.nextLine().trim();
     }
 
+    /**
+     * Redemande tant que l'utilisateur ne saisit rien : à utiliser pour
+     * tout champ obligatoire (nom, libellé, etc.).
+     */
+    public static String lireTexteObligatoire(String message) {
+        while (true) {
+            String saisie = lireTexte(message);
+            if (!saisie.isBlank()) {
+                return saisie;
+            }
+            System.out.println("Ce champ est obligatoire.");
+        }
+    }
+
     public static int lireEntier(String message) {
         while (true) {
             System.out.print(message);
@@ -30,6 +44,19 @@ public class ConsoleUtils {
         }
     }
 
+    /**
+     * Entier obligatoirement positif ou nul (quantités, seuils...).
+     */
+    public static int lireEntierPositifOuNul(String message) {
+        while (true) {
+            int valeur = lireEntier(message);
+            if (valeur >= 0) {
+                return valeur;
+            }
+            System.out.println("La valeur ne peut pas être négative.");
+        }
+    }
+
     public static double lireDouble(String message) {
         while (true) {
             System.out.print(message);
@@ -39,6 +66,19 @@ public class ConsoleUtils {
             } catch (NumberFormatException e) {
                 System.out.println("Veuillez saisir un nombre valide.");
             }
+        }
+    }
+
+    /**
+     * Nombre décimal obligatoirement positif ou nul (prix...).
+     */
+    public static double lireDoublePositif(String message) {
+        while (true) {
+            double valeur = lireDouble(message);
+            if (valeur >= 0) {
+                return valeur;
+            }
+            System.out.println("La valeur ne peut pas être négative.");
         }
     }
 

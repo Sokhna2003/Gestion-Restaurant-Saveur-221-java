@@ -160,3 +160,15 @@ UPDATE utilisateurs
 SET mot_de_passe = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9' 
 WHERE email = 'admin@saveur221.sn';
 
+INSERT INTO produits (libelle, description, prix, quantite_stock, seuil_alerte, categorie_id, disponible, image) VALUES
+('Thieboudienne', 'Riz au poisson, sauce tomate, légumes', 3500, 20, 5, 1, TRUE, NULL),
+('Yassa Poulet', 'Poulet mariné au citron et oignons', 3000, 15, 5, 1, TRUE, NULL),
+('Mafé', 'Viande sauce arachide', 3200, 3, 5, 1, TRUE, NULL),          -- stock faible
+('Poisson braisé', 'Poisson grillé accompagné de frites', 4000, 0, 5, 1, FALSE, NULL), -- rupture
+('Bissap', 'Jus d''hibiscus glacé', 500, 30, 10, 2, TRUE, NULL),
+('Bouye', 'Jus de pain de singe', 500, 25, 10, 2, TRUE, NULL),
+('Coca-Cola', 'Canette 33cl', 600, 2, 10, 2, TRUE, NULL),              -- stock faible
+('Thiakry', 'Dessert au mil et lait caillé', 1000, 12, 5, 3, TRUE, NULL),
+('Salade de fruits', 'Fruits frais de saison', 1500, 0, 5, 3, FALSE, NULL); -- rupture
+
+
