@@ -10,6 +10,7 @@ import com.saveur221.exceptions.EntityNotFoundException;
 import com.saveur221.exceptions.ValidationException;
 import com.saveur221.service.CategorieService;
 import com.saveur221.service.CommandeService;
+import com.saveur221.service.PaiementService;
 import com.saveur221.service.ProduitService;
 import com.saveur221.service.StatistiqueService;
 import com.saveur221.service.UtilisateurService;
@@ -35,6 +36,7 @@ public class MenuPrincipalView {
     private final CommandeService commandeService;
     private final UtilisateurService utilisateurService;
     private final StatistiqueService statistiqueService;
+    private final PaiementService paiementService;
 
     // Vues (pur affichage / saisie)
     private final CategorieView categorieView;
@@ -42,6 +44,7 @@ public class MenuPrincipalView {
     private final CommandeView commandeView;
     private final UtilisateurView utilisateurView;
     private final StatistiqueView statistiqueView;
+    private final PaiementView paiementView;
 
     public MenuPrincipalView(Utilisateur utilisateurConnecte) {
         this.utilisateurConnecte = utilisateurConnecte;
@@ -51,12 +54,14 @@ public class MenuPrincipalView {
         this.commandeService = new CommandeService();
         this.utilisateurService = new UtilisateurService();
         this.statistiqueService = new StatistiqueService();
+        this.paiementService = new PaiementService();
 
         this.categorieView = new CategorieView();
         this.produitView = new ProduitView();
         this.commandeView = new CommandeView();
         this.utilisateurView = new UtilisateurView();
         this.statistiqueView = new StatistiqueView();
+        this.paiementView = new PaiementView();
     }
 
     public void afficher() {
@@ -86,7 +91,7 @@ public class MenuPrincipalView {
                 case 2 -> gererProduits();
                 case 3 -> gererStock();
                 case 4 -> gererCommandes();
-                case 5 -> afficherFonctionnaliteAVenir("Paiements");
+                case 5 -> gererPaiements();
                 case 6 -> gererStatistiques();
                 case 7 -> {
                     if (utilisateurConnecte.getRole() == RoleType.ADMIN) {
@@ -367,6 +372,40 @@ public class MenuPrincipalView {
         } catch (SQLException e) {
             ConsoleUtils.afficherErreur("Erreur base de données : " + e.getMessage());
         }
+    }
+
+    // ==================== PAIEMENTS ====================
+
+    private void gererPaiements() {
+        int choix;
+        do {
+            choix = paiementView.demanderChoix();
+            try {
+                switch (choix) {
+                    case 1 -> paiementView.afficherCommandes(paiementService.listerImpayees());
+                    case 2 -> paiementView.afficherCommandes(paiementService.listerPartiellementPayees());
+                    case 3 -> {
+                        int idCommande = paiementView.demanderIdCommande("payer");
+                        var restant = paiementService.montantRestant(idCommande);
+                        paiementView.afficherMessage("Montant restant à payer : " + restant);
+                        var montant = paiementView.demanderMontant();
+                        String mode = paiementView.demanderModePaiement();
+                        paiementService.enregistrer(idCommande, montant, mode);
+                        paiementView.afficherMessage("Paiement enregistré avec succès !");
+                    }
+                    case 4 -> {
+                        int idCommande = paiementView.demanderIdCommande("consulter");
+                        paiementView.afficherPaiements(paiementService.listerParCommande(idCommande));
+                    }
+                    case 0 -> { /* retour */ }
+                    default -> paiementView.afficherMessage("Option invalide.");
+                }
+            } catch (ValidationException | EntityNotFoundException e) {
+                paiementView.afficherMessage("⚠ " + e.getMessage());
+            } catch (SQLException e) {
+                paiementView.afficherMessage("⚠ Erreur base de données : " + e.getMessage());
+            }
+        } while (choix != 0);
     }
 
     private void afficherFonctionnaliteAVenir(String nom) {
