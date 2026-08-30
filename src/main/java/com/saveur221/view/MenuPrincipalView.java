@@ -11,6 +11,7 @@ import com.saveur221.exceptions.ValidationException;
 import com.saveur221.service.CategorieService;
 import com.saveur221.service.CommandeService;
 import com.saveur221.service.ProduitService;
+import com.saveur221.service.UtilisateurService;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -34,11 +35,13 @@ public class MenuPrincipalView {
     private final CategorieService categorieService;
     private final ProduitService produitService;
     private final CommandeService commandeService;
+    private final UtilisateurService utilisateurService;
 
     // Vues (pur affichage / saisie)
     private final CategorieView categorieView;
     private final ProduitView produitView;
     private final CommandeView commandeView;
+    private final UtilisateurView utilisateurView;
 
     public MenuPrincipalView(Utilisateur utilisateurConnecte) {
         this.utilisateurConnecte = utilisateurConnecte;
@@ -46,10 +49,12 @@ public class MenuPrincipalView {
         this.categorieService = new CategorieService();
         this.produitService = new ProduitService();
         this.commandeService = new CommandeService();
+        this.utilisateurService = new UtilisateurService();
 
         this.categorieView = new CategorieView();
         this.produitView = new ProduitView();
         this.commandeView = new CommandeView();
+        this.utilisateurView = new UtilisateurView();
     }
 
     public void afficher() {
@@ -83,7 +88,7 @@ public class MenuPrincipalView {
                 case 6 -> afficherFonctionnaliteAVenir("Statistiques");
                 case 7 -> {
                     if (utilisateurConnecte.getRole() == RoleType.ADMIN) {
-                        afficherFonctionnaliteAVenir("Gestion des utilisateurs");
+                        gererUtilisateurs();
                     } else {
                         ConsoleUtils.afficherErreur("Option invalide.");
                     }
@@ -278,6 +283,67 @@ public class MenuPrincipalView {
                 commandeView.afficherMessage("⚠ " + e.getMessage());
             } catch (SQLException e) {
                 commandeView.afficherMessage("⚠ Erreur base de données : " + e.getMessage());
+            }
+        } while (choix != 0);
+    }
+
+    // ==================== UTILISATEURS (ADMIN) ====================
+
+    private void gererUtilisateurs() {
+        int choix;
+        do {
+            choix = utilisateurView.demanderChoix();
+            try {
+                switch (choix) {
+                    case 1 -> {
+                        Utilisateur brouillon = utilisateurView.demanderNouvelUtilisateur();
+                        utilisateurService.ajouter(brouillon.getNom(), brouillon.getPrenom(),
+                                brouillon.getEmail(), brouillon.getMotDePasse(), brouillon.getRole());
+                        utilisateurView.afficherMessage("Utilisateur créé avec succès !");
+                    }
+                    case 2 -> utilisateurView.afficherUtilisateurs(utilisateurService.lister());
+                    case 3 -> {
+                        String motCle = utilisateurView.demanderMotCle();
+                        utilisateurView.afficherUtilisateurs(utilisateurService.rechercher(motCle));
+                    }
+                    case 4 -> {
+                        int id = utilisateurView.demanderId("modifier");
+                        Utilisateur existant = utilisateurService.consulter(id);
+                        Utilisateur modifie = utilisateurView.demanderModification(existant);
+                        utilisateurService.modifier(id, modifie.getNom(), modifie.getPrenom(),
+                                modifie.getEmail(), modifie.getRole());
+                        utilisateurView.afficherMessage("Utilisateur modifié avec succès !");
+                    }
+                    case 5 -> {
+                        int id = utilisateurView.demanderId("changer le mot de passe de");
+                        String nouveauMdp = utilisateurView.demanderNouveauMotDePasse();
+                        utilisateurService.changerMotDePasse(id, nouveauMdp);
+                        utilisateurView.afficherMessage("Mot de passe mis à jour !");
+                    }
+                    case 6 -> {
+                        int id = utilisateurView.demanderId("activer");
+                        utilisateurService.activer(id);
+                        utilisateurView.afficherMessage("Compte activé !");
+                    }
+                    case 7 -> {
+                        int id = utilisateurView.demanderId("désactiver");
+                        utilisateurService.desactiver(id, utilisateurConnecte.getId());
+                        utilisateurView.afficherMessage("Compte désactivé !");
+                    }
+                    case 8 -> {
+                        int id = utilisateurView.demanderId("supprimer");
+                        if (utilisateurView.confirmerSuppression()) {
+                            utilisateurService.supprimer(id, utilisateurConnecte.getId());
+                            utilisateurView.afficherMessage("Utilisateur supprimé !");
+                        }
+                    }
+                    case 0 -> { /* retour */ }
+                    default -> utilisateurView.afficherMessage("Option invalide.");
+                }
+            } catch (ValidationException | EntityNotFoundException e) {
+                utilisateurView.afficherMessage("⚠ " + e.getMessage());
+            } catch (SQLException e) {
+                utilisateurView.afficherMessage("⚠ Erreur base de données : " + e.getMessage());
             }
         } while (choix != 0);
     }
