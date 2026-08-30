@@ -1,9 +1,9 @@
-package src.main.java.com.saveur221.service;
+package com.saveur221.service;
 
-import src.main.java.com.saveur221.config.PasswordUtil;
-import src.main.java.com.saveur221.entities.Utilisateur;
-import src.main.java.com.saveur221.exceptions.AuthentificationException;
-import src.main.java.com.saveur221.repository.UtilisateurRepository;
+import com.saveur221.config.PasswordUtil;
+import com.saveur221.entities.Utilisateur;
+import com.saveur221.exceptions.AuthentificationException;
+import com.saveur221.repository.UtilisateurRepository;
 
 import java.sql.SQLException;
 import java.util.Optional;

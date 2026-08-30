@@ -1,7 +1,7 @@
-package src.main.java.com.saveur221.repository;
+package com.saveur221.repository;
 
-import src.main.java.com.saveur221.config.DatabaseConfig;
-import src.main.java.com.saveur221.entities.Categorie;
+import com.saveur221.config.DatabaseConfig;
+import com.saveur221.entities.Categorie;
 
 import java.sql.*;
 import java.util.ArrayList;

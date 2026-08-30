@@ -7,7 +7,7 @@ CREATE DATABASE IF NOT EXISTS restaurant_saveur221
     CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
 
-USE saveur221;
+USE restaurant_saveur221;
 
 -- ---------------------------------------------------------------------
 -- Table : roles
