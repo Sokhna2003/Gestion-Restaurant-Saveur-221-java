@@ -114,6 +114,27 @@ public class CommandeRepository {
         }
     }
 
+        /**
+     * Charge une commande sans ses lignes (plus léger). Utile quand on a
+     * juste besoin du montant_total, du client ou du statut, par exemple
+     * pour la gestion des paiements.
+     */
+    public Optional<Commande> findById(int id) throws SQLException {
+        String sql = SELECT_COMMANDE_BASE + " WHERE c.id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapCommandeSansLignes(rs));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     public List<LigneCommande> findLignesByCommande(int commandeId, Commande commande) throws SQLException {
         List<LigneCommande> lignes = new ArrayList<>();
 
