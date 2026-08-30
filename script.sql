@@ -252,3 +252,23 @@ VALUES
 UPDATE commandes SET montant_total =
     (SELECT SUM(quantite * prix_unitaire) FROM ligne_commandes WHERE commande_id = @cmd4)
     WHERE id = @cmd4;
+
+
+-- Utilisateurs internes de test supplémentaires
+-- Mots de passe déjà hachés en SHA-256 :
+--   gerant123 -> 0adea017a51a0224047865ad5b90b53289a93f01ef1b798ef8ae079b3c161640
+--   admin456  -> becf77f3ec82a43422b7712134d1860e3205c6ce778b08417a7389b43f2b4661
+
+USE restaurant_saveur221;
+
+INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, role_id, actif) VALUES
+('Faye', 'Ibrahima', 'ibrahima.faye@saveur221.sn',
+    '0adea017a51a0224047865ad5b90b53289a93f01ef1b798ef8ae079b3c161640',
+    (SELECT id FROM roles WHERE libelle = 'GERANT'), TRUE),
+('Ba', 'Khady', 'khady.ba@saveur221.sn',
+    'becf77f3ec82a43422b7712134d1860e3205c6ce778b08417a7389b43f2b4661',
+    (SELECT id FROM roles WHERE libelle = 'ADMIN'), TRUE),
+('Sarr', 'Modou', 'modou.sarr@saveur221.sn',
+    '0adea017a51a0224047865ad5b90b53289a93f01ef1b798ef8ae079b3c161640',
+    (SELECT id FROM roles WHERE libelle = 'GERANT'), FALSE); -- compte désactivé, pour tester le refus de connexion
+
