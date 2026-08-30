@@ -11,16 +11,14 @@ import com.saveur221.exceptions.ValidationException;
 import com.saveur221.service.CategorieService;
 import com.saveur221.service.CommandeService;
 import com.saveur221.service.ProduitService;
+import com.saveur221.service.StatistiqueService;
 import com.saveur221.service.UtilisateurService;
 
 import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Menu principal affiché après connexion. Le GERANT et l'ADMIN partagent
- * le même espace de gestion (catégories, produits, stock, commandes,
- * paiements, statistiques) ; l'ADMIN a en plus la gestion des utilisateurs.
- * 
+ * Menu principal affiché après connexion.
  * Seule classe de la couche View autorisée à appeler la couche Service
  * (contrainte du prof) : elle orchestre chaque sous-menu (gererCategories,
  * gererProduits, gererCommandes, ...) et délègue l'affichage/la saisie aux
@@ -36,12 +34,14 @@ public class MenuPrincipalView {
     private final ProduitService produitService;
     private final CommandeService commandeService;
     private final UtilisateurService utilisateurService;
+    private final StatistiqueService statistiqueService;
 
     // Vues (pur affichage / saisie)
     private final CategorieView categorieView;
     private final ProduitView produitView;
     private final CommandeView commandeView;
     private final UtilisateurView utilisateurView;
+    private final StatistiqueView statistiqueView;
 
     public MenuPrincipalView(Utilisateur utilisateurConnecte) {
         this.utilisateurConnecte = utilisateurConnecte;
@@ -50,11 +50,13 @@ public class MenuPrincipalView {
         this.produitService = new ProduitService();
         this.commandeService = new CommandeService();
         this.utilisateurService = new UtilisateurService();
+        this.statistiqueService = new StatistiqueService();
 
         this.categorieView = new CategorieView();
         this.produitView = new ProduitView();
         this.commandeView = new CommandeView();
         this.utilisateurView = new UtilisateurView();
+        this.statistiqueView = new StatistiqueView();
     }
 
     public void afficher() {
@@ -85,7 +87,7 @@ public class MenuPrincipalView {
                 case 3 -> gererStock();
                 case 4 -> gererCommandes();
                 case 5 -> afficherFonctionnaliteAVenir("Paiements");
-                case 6 -> afficherFonctionnaliteAVenir("Statistiques");
+                case 6 -> gererStatistiques();
                 case 7 -> {
                     if (utilisateurConnecte.getRole() == RoleType.ADMIN) {
                         gererUtilisateurs();
@@ -346,6 +348,25 @@ public class MenuPrincipalView {
                 utilisateurView.afficherMessage("⚠ Erreur base de données : " + e.getMessage());
             }
         } while (choix != 0);
+    }
+
+    // ==================== STATISTIQUES ====================
+
+    private void gererStatistiques() {
+        try {
+            statistiqueView.afficherTableauDeBord(
+                    statistiqueService.caDuJour(),
+                    statistiqueService.caDeLaSemaine(),
+                    statistiqueService.caDuMois(),
+                    statistiqueService.nombreCommandes(),
+                    statistiqueService.commandesEnCours(),
+                    statistiqueService.commandesParStatut(),
+                    statistiqueService.produitLePlusVendu(),
+                    statistiqueService.topTroisProduits()
+            );
+        } catch (SQLException e) {
+            ConsoleUtils.afficherErreur("Erreur base de données : " + e.getMessage());
+        }
     }
 
     private void afficherFonctionnaliteAVenir(String nom) {
