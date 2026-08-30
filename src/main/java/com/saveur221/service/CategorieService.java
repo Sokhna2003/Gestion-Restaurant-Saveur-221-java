@@ -1,9 +1,9 @@
-package src.main.java.com.saveur221.service;
+package com.saveur221.service;
 
-import src.main.java.com.saveur221.entities.Categorie;
-import src.main.java.com.saveur221.exceptions.EntityNotFoundException;
-import src.main.java.com.saveur221.exceptions.ValidationException;
-import src.main.java.com.saveur221.repository.CategorieRepository;
+import com.saveur221.entities.Categorie;
+import com.saveur221.exceptions.EntityNotFoundException;
+import com.saveur221.exceptions.ValidationException;
+import com.saveur221.repository.CategorieRepository;
 
 import java.sql.SQLException;
 import java.util.List;

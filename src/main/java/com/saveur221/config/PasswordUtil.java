@@ -1,4 +1,4 @@
-package src.main.java.com.saveur221.config;
+package com.saveur221.config;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
