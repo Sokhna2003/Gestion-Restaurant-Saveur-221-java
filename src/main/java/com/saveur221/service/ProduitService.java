@@ -106,9 +106,52 @@ public class ProduitService {
         produitRepository.update(produit);
     }
 
+    /**
+     * Déplace le produit dans la corbeille (soft delete), restant cohérent
+     * avec le Module B (PHP) : le produit disparaît des listes actives mais
+     * peut être restauré.
+     */
     public void supprimer(int id) throws SQLException, EntityNotFoundException {
-        consulter(id); // vérifie qu'il existe
+        consulter(id); // vérifie qu'il existe et est actif
         produitRepository.delete(id);
+    }
+
+    public List<Produit> listerCorbeille() throws SQLException {
+        return produitRepository.findAllSupprimees();
+    }
+
+    /**
+     * Restaure un produit supprimé (sort de la corbeille, supprime_le = NULL).
+     */
+    public void restaurer(int id) throws SQLException, ValidationException, EntityNotFoundException {
+        Produit produit = produitRepository.findByIdIncluantSupprime(id)
+                .orElseThrow(() -> new EntityNotFoundException("Produit", id));
+        if (!produit.isSupprime()) {
+            throw new ValidationException("Ce produit n'est pas dans la corbeille.");
+        }
+        produitRepository.restaurer(id);
+    }
+
+    /**
+     * Suppression physique (définitive). Nécessite un produit en corbeille et
+     * n'apparaissant dans aucune commande (ligne_commandes), sinon la clé
+     * étrangère fk_ligne_produit serait violée.
+     */
+    public void supprimerDefinitivement(int id)
+            throws SQLException, ValidationException, EntityNotFoundException {
+
+        Produit produit = produitRepository.findByIdIncluantSupprime(id)
+                .orElseThrow(() -> new EntityNotFoundException("Produit", id));
+        if (!produit.isSupprime()) {
+            throw new ValidationException("Ce produit n'est pas dans la corbeille.");
+        }
+
+        if (produitRepository.estReferenceDansDesCommandes(id)) {
+            throw new ValidationException(
+                    "Suppression impossible : ce produit apparaît dans l'historique des commandes.");
+        }
+
+        produitRepository.supprimerDefinitivement(id);
     }
 
     /**

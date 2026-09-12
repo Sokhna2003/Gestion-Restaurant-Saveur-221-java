@@ -1,6 +1,7 @@
 package com.saveur221.entities;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
  * Un produit contient au minimum, d'après le sujet :
@@ -19,6 +20,8 @@ public class Produit {
     private Categorie categorie;
     private boolean disponible;
     private String image;
+    private LocalDateTime dateAjout;
+    private LocalDateTime supprimeLe;
 
     public Produit() {
     }
@@ -35,6 +38,15 @@ public class Produit {
         this.categorie = categorie;
         this.disponible = disponible;
         this.image = image;
+    }
+
+    public Produit(int id, String libelle, String description, BigDecimal prix,
+                   int quantiteStock, int seuilAlerte, Categorie categorie,
+                   boolean disponible, String image,
+                   LocalDateTime dateAjout, LocalDateTime supprimeLe) {
+        this(id, libelle, description, prix, quantiteStock, seuilAlerte, categorie, disponible, image);
+        this.dateAjout = dateAjout;
+        this.supprimeLe = supprimeLe;
     }
 
     public int getId() {
@@ -107,6 +119,26 @@ public class Produit {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    public LocalDateTime getDateAjout() {
+        return dateAjout;
+    }
+
+    public void setDateAjout(LocalDateTime dateAjout) {
+        this.dateAjout = dateAjout;
+    }
+
+    public LocalDateTime getSupprimeLe() {
+        return supprimeLe;
+    }
+
+    public void setSupprimeLe(LocalDateTime supprimeLe) {
+        this.supprimeLe = supprimeLe;
+    }
+
+    public boolean isSupprime() {
+        return supprimeLe != null;
     }
 
     public boolean isStockFaible() {

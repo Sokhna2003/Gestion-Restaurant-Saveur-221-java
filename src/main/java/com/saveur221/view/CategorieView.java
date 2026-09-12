@@ -2,6 +2,7 @@ package com.saveur221.view;
 
 import com.saveur221.entities.Categorie;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -11,13 +12,19 @@ import java.util.List;
  */
 public class CategorieView {
 
+    private static final DateTimeFormatter FORMAT_DATE =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
     public int demanderChoix() {
         ConsoleUtils.afficherTitre("Gestion des catégories");
         System.out.println("1. Ajouter une catégorie");
         System.out.println("2. Afficher toutes les catégories");
         System.out.println("3. Rechercher une catégorie");
         System.out.println("4. Modifier une catégorie");
-        System.out.println("5. Supprimer une catégorie");
+        System.out.println("5. Supprimer une catégorie (corbeille)");
+        System.out.println("6. Voir les catégories en corbeille");
+        System.out.println("7. Restaurer une catégorie");
+        System.out.println("8. Supprimer définitivement une catégorie");
         System.out.println("0. Retour au menu principal");
         return ConsoleUtils.lireEntier("Votre choix : ");
     }
@@ -60,14 +67,20 @@ public class CategorieView {
     }
 
     public void afficherCategories(List<Categorie> categories) {
-        ConsoleUtils.afficherTitre("Liste des catégories");
+        afficherCategories(categories, "Liste des catégories");
+    }
+
+    public void afficherCategories(List<Categorie> categories, String titre) {
+        ConsoleUtils.afficherTitre(titre);
         if (categories.isEmpty()) {
             System.out.println("Aucune catégorie enregistrée.");
             return;
         }
         for (Categorie c : categories) {
-            System.out.printf("[%d] %s - %s%n", c.getId(), c.getNom(),
-                    c.getDescription() == null ? "" : c.getDescription());
+            System.out.printf("[%d] %s - %s%s%n", c.getId(), c.getNom(),
+                    c.getDescription() == null ? "" : c.getDescription(),
+                    c.getSupprimeLe() == null ? ""
+                            : " (supprimée le " + c.getSupprimeLe().format(FORMAT_DATE) + ")");
         }
     }
 
@@ -76,8 +89,14 @@ public class CategorieView {
             System.out.println("Catégorie introuvable.");
             return;
         }
-        System.out.printf("[%d] %s - %s%n", categorie.getId(), categorie.getNom(),
-                categorie.getDescription() == null ? "" : categorie.getDescription());
+        System.out.printf("[%d] %s - %s%s%n", categorie.getId(), categorie.getNom(),
+                categorie.getDescription() == null ? "" : categorie.getDescription(),
+                categorie.getSupprimeLe() == null ? ""
+                        : " (supprimée le " + categorie.getSupprimeLe().format(FORMAT_DATE) + ")");
+    }
+
+    public boolean confirmerSuppressionDefinitive() {
+        return ConsoleUtils.lireTexte("Confirmer la suppression définitive ? (o/N) > ").equalsIgnoreCase("o");
     }
 
     public void afficherMessage(String message) {

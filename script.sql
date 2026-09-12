@@ -28,6 +28,7 @@ CREATE TABLE utilisateurs (
     prenom VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     mot_de_passe VARCHAR(255) NOT NULL,
+    photo VARCHAR(255) NULL,
     role_id INT NOT NULL,
     actif BOOLEAN NOT NULL DEFAULT TRUE,
     date_creation DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -45,17 +46,23 @@ CREATE TABLE clients (
     email VARCHAR(150) NOT NULL UNIQUE,
     telephone VARCHAR(20),
     adresse VARCHAR(255),
+    photo VARCHAR(255) NULL,
     mot_de_passe VARCHAR(255) NOT NULL,
     date_inscription DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ---------------------------------------------------------------------
 -- Table : categories
+-- date_ajout : date de création de la catégorie
+-- supprime_le : NULL = actif, date = déplacée en corbeille (soft delete)
 -- ---------------------------------------------------------------------
 CREATE TABLE categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(100) NOT NULL UNIQUE,
-    description VARCHAR(255)
+    description VARCHAR(255),
+    image VARCHAR(255) NULL,
+    date_ajout DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    supprime_le DATETIME NULL
 );
 
 -- ---------------------------------------------------------------------
@@ -64,6 +71,8 @@ CREATE TABLE categories (
 -- (géré au niveau applicatif, pas par contrainte SQL)
 -- ON DELETE RESTRICT : une catégorie contenant des produits ne peut pas
 -- être supprimée (règle métier n°9 du sujet)
+-- date_ajout : date de création du produit ; supprime_le : NULL = actif,
+-- date = déplacé en corbeille (soft delete)
 -- ---------------------------------------------------------------------
 CREATE TABLE produits (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -75,6 +84,8 @@ CREATE TABLE produits (
     categorie_id INT NOT NULL,
     disponible BOOLEAN NOT NULL DEFAULT TRUE,
     image VARCHAR(255),
+    date_ajout DATETIME NULL,
+    supprime_le DATETIME NULL,
     CONSTRAINT fk_produit_categorie FOREIGN KEY (categorie_id) REFERENCES categories(id)
         ON DELETE RESTRICT
 );
@@ -150,10 +161,10 @@ INSERT INTO roles (libelle) VALUES ('ADMIN'), ('GERANT');
 INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, role_id, actif)
 VALUES ('Diop', 'Awa', 'admin@saveur221.sn', 'admin123', 1, TRUE);
 
-INSERT INTO categories (nom, description) VALUES
-    ('Plats', 'Plats principaux du restaurant'),
-    ('Boissons', 'Boissons fraîches et chaudes'),
-    ('Desserts', 'Desserts et pâtisseries');
+INSERT INTO categories (nom, description, image) VALUES
+    ('Plats', 'Plats principaux du restaurant', NULL),
+    ('Boissons', 'Boissons fraîches et chaudes', NULL),
+    ('Desserts', 'Desserts et pâtisseries', NULL);
 
 
 UPDATE utilisateurs 

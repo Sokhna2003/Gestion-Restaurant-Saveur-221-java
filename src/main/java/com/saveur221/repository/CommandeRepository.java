@@ -19,14 +19,16 @@ public class CommandeRepository {
     private static final String SELECT_COMMANDE_BASE =
             "SELECT c.id, c.date_commande, c.statut, c.montant_total, " +
             "cl.id AS client_id, cl.nom AS client_nom, cl.prenom AS client_prenom, " +
-            "cl.email AS client_email, cl.telephone AS client_telephone, cl.adresse AS client_adresse " +
+            "cl.email AS client_email, cl.telephone AS client_telephone, cl.adresse AS client_adresse, " +
+            "cl.photo AS client_photo " +
             "FROM commandes c JOIN clients cl ON c.client_id = cl.id";
 
     private static final String SELECT_LIGNE_BASE =
             "SELECT lc.id, lc.quantite, lc.prix_unitaire, " +
             "p.id AS produit_id, p.libelle, p.description, p.prix, p.quantite_stock, " +
-            "p.seuil_alerte, p.disponible, p.image, " +
-            "cat.id AS categorie_id, cat.nom AS categorie_nom, cat.description AS categorie_description " +
+            "p.seuil_alerte, p.disponible, p.image, p.date_ajout, p.supprime_le, " +
+            "cat.id AS categorie_id, cat.nom AS categorie_nom, cat.description AS categorie_description, " +
+            "cat.image AS categorie_image " +
             "FROM ligne_commandes lc " +
             "JOIN produits p ON lc.produit_id = p.id " +
             "JOIN categories cat ON p.categorie_id = cat.id " +
@@ -147,8 +149,11 @@ public class CommandeRepository {
                     Categorie categorie = new Categorie(
                             rs.getInt("categorie_id"),
                             rs.getString("categorie_nom"),
-                            rs.getString("categorie_description")
+                            rs.getString("categorie_description"),
+                            rs.getString("categorie_image")
                     );
+                    Timestamp dateAjout = rs.getTimestamp("date_ajout");
+                    Timestamp supprimeLe = rs.getTimestamp("supprime_le");
                     Produit produit = new Produit(
                             rs.getInt("produit_id"),
                             rs.getString("libelle"),
@@ -158,7 +163,9 @@ public class CommandeRepository {
                             rs.getInt("seuil_alerte"),
                             categorie,
                             rs.getBoolean("disponible"),
-                            rs.getString("image")
+                            rs.getString("image"),
+                            dateAjout != null ? dateAjout.toLocalDateTime() : null,
+                            supprimeLe != null ? supprimeLe.toLocalDateTime() : null
                     );
                     LigneCommande ligne = new LigneCommande(
                             rs.getInt("id"),
@@ -198,7 +205,8 @@ public class CommandeRepository {
                 rs.getString("client_email"),
                 rs.getString("client_telephone"),
                 rs.getString("client_adresse"),
-                null // mot de passe non chargé ici, inutile pour cette vue
+                null, // mot de passe non chargé ici, inutile pour cette vue
+                rs.getString("client_photo")
         );
 
         Timestamp timestamp = rs.getTimestamp("date_commande");

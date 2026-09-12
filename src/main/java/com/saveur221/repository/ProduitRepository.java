@@ -14,13 +14,17 @@ import java.util.Optional;
  * Accès aux données de la table "produits" (JDBC pur).
  * Chaque ligne est jointe à sa catégorie pour reconstruire l'objet Categorie
  * complet plutôt que de ne garder que son id.
+ * Aligné sur le Module B (PHP) : suppression en soft delete (supprime_le),
+ * listes actives filtrées sur supprime_le IS NULL, corbeille (restaurer /
+ * supprimer définitivement) gérée ici.
  */
 public class ProduitRepository {
 
     private static final String SELECT_BASE =
             "SELECT p.id, p.libelle, p.description, p.prix, p.quantite_stock, " +
-            "p.seuil_alerte, p.disponible, p.image, " +
-            "c.id AS categorie_id, c.nom AS categorie_nom, c.description AS categorie_description " +
+            "p.seuil_alerte, p.disponible, p.image, p.date_ajout, p.supprime_le, " +
+            "c.id AS categorie_id, c.nom AS categorie_nom, c.description AS categorie_description, " +
+            "c.image AS categorie_image " +
             "FROM produits p " +
             "JOIN categories c ON p.categorie_id = c.id";
 
@@ -51,37 +55,32 @@ public class ProduitRepository {
     }
 
     public List<Produit> findAll() throws SQLException {
-        String sql = SELECT_BASE + " ORDER BY p.libelle";
-        List<Produit> produits = new ArrayList<>();
+        String sql = SELECT_BASE + " WHERE p.supprime_le IS NULL ORDER BY p.libelle";
+        return executeList(sql);
+    }
 
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                produits.add(mapRow(rs));
-            }
-        }
-        return produits;
+    public List<Produit> findAllSupprimees() throws SQLException {
+        String sql = SELECT_BASE + " WHERE p.supprime_le IS NOT NULL ORDER BY p.supprime_le DESC";
+        return executeList(sql);
     }
 
     public Optional<Produit> findById(int id) throws SQLException {
-        String sql = SELECT_BASE + " WHERE p.id = ?";
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        String sql = SELECT_BASE + " WHERE p.id = ? AND p.supprime_le IS NULL";
+        return executeSingle(sql, id);
+    }
 
-            stmt.setInt(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapRow(rs));
-                }
-            }
-        }
-        return Optional.empty();
+    /**
+     * Cherche un produit même s'il est en corbeille (utilisé pour restaurer
+     * ou supprimer définitivement un élément de la corbeille).
+     */
+    public Optional<Produit> findByIdIncluantSupprime(int id) throws SQLException {
+        String sql = SELECT_BASE + " WHERE p.id = ?";
+        return executeSingle(sql, id);
     }
 
     public List<Produit> search(String motCle) throws SQLException {
-        String sql = SELECT_BASE + " WHERE p.libelle LIKE ? ORDER BY p.libelle";
+        String sql = SELECT_BASE +
+                " WHERE p.supprime_le IS NULL AND p.libelle LIKE ? ORDER BY p.libelle";
         List<Produit> produits = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -98,7 +97,8 @@ public class ProduitRepository {
     }
 
     public List<Produit> findByCategorie(int categorieId) throws SQLException {
-        String sql = SELECT_BASE + " WHERE c.id = ? ORDER BY p.libelle";
+        String sql = SELECT_BASE +
+                " WHERE p.supprime_le IS NULL AND c.id = ? ORDER BY p.libelle";
         List<Produit> produits = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -115,7 +115,8 @@ public class ProduitRepository {
     }
 
     public List<Produit> findByDisponibilite(boolean disponible) throws SQLException {
-        String sql = SELECT_BASE + " WHERE p.disponible = ? ORDER BY p.libelle";
+        String sql = SELECT_BASE +
+                " WHERE p.supprime_le IS NULL AND p.disponible = ? ORDER BY p.libelle";
         List<Produit> produits = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -132,13 +133,15 @@ public class ProduitRepository {
     }
 
     public List<Produit> findEnRupture() throws SQLException {
-        String sql = SELECT_BASE + " WHERE p.quantite_stock = 0 ORDER BY p.libelle";
+        String sql = SELECT_BASE +
+                " WHERE p.supprime_le IS NULL AND p.quantite_stock = 0 ORDER BY p.libelle";
         return executeList(sql);
     }
 
     public List<Produit> findStockFaible() throws SQLException {
         String sql = SELECT_BASE +
-                " WHERE p.quantite_stock > 0 AND p.quantite_stock <= p.seuil_alerte ORDER BY p.libelle";
+                " WHERE p.supprime_le IS NULL AND p.quantite_stock > 0 " +
+                "AND p.quantite_stock <= p.seuil_alerte ORDER BY p.libelle";
         return executeList(sql);
     }
 
@@ -180,7 +183,35 @@ public class ProduitRepository {
         }
     }
 
+    /**
+     * Soft delete : déplace le produit dans la corbeille (supprime_le = date).
+     */
     public void delete(int id) throws SQLException {
+        String sql = "UPDATE produits SET supprime_le = CURRENT_TIMESTAMP WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        }
+    }
+
+    public void restaurer(int id) throws SQLException {
+        String sql = "UPDATE produits SET supprime_le = NULL WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Suppression physique (définitive). A ne déclencher que sur un produit
+     * déjà en corbeille et sans ligne de commande liée, sinon violation de la
+     * clé étrangère fk_ligne_produit.
+     */
+    public void supprimerDefinitivement(int id) throws SQLException {
         String sql = "DELETE FROM produits WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -188,6 +219,26 @@ public class ProduitRepository {
             stmt.setInt(1, id);
             stmt.executeUpdate();
         }
+    }
+
+    /**
+     * Vérifie si le produit apparaît dans l'historique des commandes
+     * (ligne_commandes) : dans ce cas on ne peut pas le supprimer
+     * définitivement (clé étrangère fk_ligne_produit).
+     */
+    public boolean estReferenceDansDesCommandes(int produitId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM ligne_commandes WHERE produit_id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, produitId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+        return false;
     }
 
     private List<Produit> executeList(String sql) throws SQLException {
@@ -203,13 +254,30 @@ public class ProduitRepository {
         return produits;
     }
 
+    private Optional<Produit> executeSingle(String sql, int id) throws SQLException {
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     private Produit mapRow(ResultSet rs) throws SQLException {
         Categorie categorie = new Categorie(
                 rs.getInt("categorie_id"),
                 rs.getString("categorie_nom"),
-                rs.getString("categorie_description")
+                rs.getString("categorie_description"),
+                rs.getString("categorie_image")
         );
 
+        Timestamp dateAjout = rs.getTimestamp("date_ajout");
+        Timestamp supprimeLe = rs.getTimestamp("supprime_le");
         return new Produit(
                 rs.getInt("id"),
                 rs.getString("libelle"),
@@ -219,7 +287,9 @@ public class ProduitRepository {
                 rs.getInt("seuil_alerte"),
                 categorie,
                 rs.getBoolean("disponible"),
-                rs.getString("image")
+                rs.getString("image"),
+                dateAjout != null ? dateAjout.toLocalDateTime() : null,
+                supprimeLe != null ? supprimeLe.toLocalDateTime() : null
         );
     }
 }
