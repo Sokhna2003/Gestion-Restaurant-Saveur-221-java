@@ -55,27 +55,60 @@ public class CategorieService {
     }
 
     /**
-     * Règle métier n°9 du sujet : une catégorie contenant des produits
-     * ne peut pas être supprimée. On vérifie explicitement avant de
-     * supprimer pour donner un message clair, plutôt que de compter
-     * uniquement sur l'exception SQL de la contrainte ON DELETE RESTRICT.
+     * Déplace une catégorie dans la corbeille (soft delete) plutôt qu'une
+     * suppression physique, pour rester cohérent avec le Module B (PHP).
+     * Règle métier (partagée avec le Module B) : une catégorie contenant
+     * des produits actifs ne peut pas être supprimée.
      */
     public void supprimer(int id) throws SQLException, ValidationException, EntityNotFoundException {
-        consulter(id); // vérifie qu'elle existe
+        consulter(id); // vérifie qu'elle existe et est active
 
-        if (categorieRepository.estUtiliseeParDesProduits(id)) {
+        int nbProduits = categorieRepository.compterProduits(id, false);
+        if (nbProduits > 0) {
             throw new ValidationException(
-                    "Impossible de supprimer cette catégorie : elle contient encore des produits.");
+                    "Impossible de supprimer cette catégorie : elle contient " + nbProduits + " produit(s).");
         }
 
-        try {
-            categorieRepository.delete(id);
-        } catch (SQLException e) {
-            // Filet de sécurité si la vérification ci-dessus a été contournée
-            // (ex: produit ajouté entre-temps par un autre utilisateur)
-            throw new ValidationException(
-                    "Impossible de supprimer cette catégorie : elle est encore utilisée.");
+        categorieRepository.delete(id);
+    }
+
+    public List<Categorie> listerCorbeille() throws SQLException {
+        return categorieRepository.findAllSupprimees();
+    }
+
+    /**
+     * Restaure une catégorie supprimée (sort de la corbeille, supprime_le = NULL).
+     */
+    public void restaurer(int id) throws SQLException, ValidationException, EntityNotFoundException {
+        Categorie categorie = categorieRepository.findByIdIncluantSupprimee(id)
+                .orElseThrow(() -> new EntityNotFoundException("Catégorie", id));
+        if (!categorie.isSupprimee()) {
+            throw new ValidationException("Cette catégorie n'est pas dans la corbeille.");
         }
+        categorieRepository.restaurer(id);
+    }
+
+    /**
+     * Suppression physique (définitive). Nécessite une catégorie en corbeille
+     * et sans produit lié, même en corbeille (sinon violation de la clé
+     * étrangère) — même règle que le Module B (PHP).
+     */
+    public void supprimerDefinitivement(int id)
+            throws SQLException, ValidationException, EntityNotFoundException {
+
+        Categorie categorie = categorieRepository.findByIdIncluantSupprimee(id)
+                .orElseThrow(() -> new EntityNotFoundException("Catégorie", id));
+        if (!categorie.isSupprimee()) {
+            throw new ValidationException("Cette catégorie n'est pas dans la corbeille.");
+        }
+
+        int nbProduits = categorieRepository.compterProduits(id, true);
+        if (nbProduits > 0) {
+            throw new ValidationException(
+                    "Suppression impossible : " + nbProduits + " produit(s) sont encore liés à cette catégorie.");
+        }
+
+        categorieRepository.supprimerDefinitivement(id);
     }
 
     private void validerNom(String nom) throws ValidationException {

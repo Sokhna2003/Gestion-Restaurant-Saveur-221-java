@@ -21,7 +21,8 @@ public class PaiementRepository {
     private static final String SELECT_COMMANDE_HEADER =
             "c.id AS cmd_id, c.date_commande, c.statut, c.montant_total, " +
             "cl.id AS client_id, cl.nom AS client_nom, cl.prenom AS client_prenom, " +
-            "cl.email AS client_email, cl.telephone AS client_telephone, cl.adresse AS client_adresse " +
+            "cl.email AS client_email, cl.telephone AS client_telephone, cl.adresse AS client_adresse, " +
+            "cl.photo AS client_photo " +
             "FROM commandes c JOIN clients cl ON c.client_id = cl.id";
 
     public BigDecimal montantDejaPaye(int commandeId) throws SQLException {
@@ -113,7 +114,8 @@ public class PaiementRepository {
                         rs.getString("client_email"),
                         rs.getString("client_telephone"),
                         rs.getString("client_adresse"),
-                        null
+                        null,
+                        rs.getString("client_photo")
                 );
                 Timestamp ts = rs.getTimestamp("date_commande");
                 commandes.add(new Commande(

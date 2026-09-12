@@ -137,7 +137,21 @@ public class MenuPrincipalView {
                     case 5 -> {
                         int id = categorieView.demanderId("supprimer");
                         categorieService.supprimer(id);
-                        categorieView.afficherMessage("Catégorie supprimée avec succès !");
+                        categorieView.afficherMessage("Catégorie déplacée dans la corbeille !");
+                    }
+                    case 6 -> categorieView.afficherCategories(categorieService.listerCorbeille(),
+                            "Corbeille des catégories");
+                    case 7 -> {
+                        int id = categorieView.demanderId("restaurer");
+                        categorieService.restaurer(id);
+                        categorieView.afficherMessage("Catégorie restaurée avec succès !");
+                    }
+                    case 8 -> {
+                        int id = categorieView.demanderId("supprimer définitivement");
+                        if (categorieView.confirmerSuppressionDefinitive()) {
+                            categorieService.supprimerDefinitivement(id);
+                            categorieView.afficherMessage("Catégorie supprimée définitivement.");
+                        }
                     }
                     case 0 -> { /* retour */ }
                     default -> categorieView.afficherMessage("Option invalide.");
@@ -193,7 +207,20 @@ public class MenuPrincipalView {
                     case 8 -> {
                         int id = produitView.demanderId("supprimer");
                         produitService.supprimer(id);
-                        produitView.afficherMessage("Produit supprimé avec succès !");
+                        produitView.afficherMessage("Produit déplacé dans la corbeille !");
+                    }
+                    case 9 -> produitView.afficherProduits(produitService.listerCorbeille());
+                    case 10 -> {
+                        int id = produitView.demanderId("restaurer");
+                        produitService.restaurer(id);
+                        produitView.afficherMessage("Produit restauré avec succès !");
+                    }
+                    case 11 -> {
+                        int id = produitView.demanderId("supprimer définitivement");
+                        if (produitView.confirmerSuppressionDefinitive()) {
+                            produitService.supprimerDefinitivement(id);
+                            produitView.afficherMessage("Produit supprimé définitivement.");
+                        }
                     }
                     case 0 -> { /* retour */ }
                     default -> produitView.afficherMessage("Option invalide.");

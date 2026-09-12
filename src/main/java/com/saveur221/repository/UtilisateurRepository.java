@@ -15,7 +15,8 @@ import java.util.Optional;
 public class UtilisateurRepository {
 
     private static final String SELECT_BASE =
-            "SELECT u.id, u.nom, u.prenom, u.email, u.mot_de_passe, u.actif, r.libelle AS role_libelle " +
+            "SELECT u.id, u.nom, u.prenom, u.email, u.mot_de_passe, u.photo, u.actif, " +
+            "r.libelle AS role_libelle " +
             "FROM utilisateurs u JOIN roles r ON u.role_id = r.id";
 
     public Optional<Utilisateur> findByEmail(String email) throws SQLException {
@@ -84,8 +85,8 @@ public class UtilisateurRepository {
     }
 
     public Utilisateur save(Utilisateur utilisateur) throws SQLException {
-        String sql = "INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, role_id, actif) " +
-                "VALUES (?, ?, ?, ?, (SELECT id FROM roles WHERE libelle = ?), ?)";
+        String sql = "INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, photo, role_id, actif) " +
+                "VALUES (?, ?, ?, ?, ?, (SELECT id FROM roles WHERE libelle = ?), ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -94,8 +95,9 @@ public class UtilisateurRepository {
             stmt.setString(2, utilisateur.getPrenom());
             stmt.setString(3, utilisateur.getEmail());
             stmt.setString(4, utilisateur.getMotDePasse());
-            stmt.setString(5, utilisateur.getRole().name());
-            stmt.setBoolean(6, utilisateur.isActif());
+            stmt.setString(5, utilisateur.getPhoto());
+            stmt.setString(6, utilisateur.getRole().name());
+            stmt.setBoolean(7, utilisateur.isActif());
             stmt.executeUpdate();
 
             try (ResultSet keys = stmt.getGeneratedKeys()) {
@@ -108,7 +110,7 @@ public class UtilisateurRepository {
     }
 
     public void update(Utilisateur utilisateur) throws SQLException {
-        String sql = "UPDATE utilisateurs SET nom = ?, prenom = ?, email = ?, " +
+        String sql = "UPDATE utilisateurs SET nom = ?, prenom = ?, email = ?, photo = ?, " +
                 "role_id = (SELECT id FROM roles WHERE libelle = ?), actif = ? WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -117,9 +119,10 @@ public class UtilisateurRepository {
             stmt.setString(1, utilisateur.getNom());
             stmt.setString(2, utilisateur.getPrenom());
             stmt.setString(3, utilisateur.getEmail());
-            stmt.setString(4, utilisateur.getRole().name());
-            stmt.setBoolean(5, utilisateur.isActif());
-            stmt.setInt(6, utilisateur.getId());
+            stmt.setString(4, utilisateur.getPhoto());
+            stmt.setString(5, utilisateur.getRole().name());
+            stmt.setBoolean(6, utilisateur.isActif());
+            stmt.setInt(7, utilisateur.getId());
             stmt.executeUpdate();
         }
     }
@@ -178,6 +181,7 @@ public class UtilisateurRepository {
                 rs.getString("prenom"),
                 rs.getString("email"),
                 rs.getString("mot_de_passe"),
+                rs.getString("photo"),
                 RoleType.valueOf(rs.getString("role_libelle")),
                 rs.getBoolean("actif")
         );

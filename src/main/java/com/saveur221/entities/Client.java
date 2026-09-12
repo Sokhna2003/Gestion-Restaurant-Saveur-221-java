@@ -13,12 +13,18 @@ public class Client {
     private String telephone;
     private String adresse;
     private String motDePasse;
+    private String photo;
 
     public Client() {
     }
 
     public Client(int id, String nom, String prenom, String email,
                   String telephone, String adresse, String motDePasse) {
+        this(id, nom, prenom, email, telephone, adresse, motDePasse, null);
+    }
+
+    public Client(int id, String nom, String prenom, String email,
+                  String telephone, String adresse, String motDePasse, String photo) {
         this.id = id;
         this.nom = nom;
         this.prenom = prenom;
@@ -26,6 +32,7 @@ public class Client {
         this.telephone = telephone;
         this.adresse = adresse;
         this.motDePasse = motDePasse;
+        this.photo = photo;
     }
 
     public int getId() {
@@ -82,6 +89,14 @@ public class Client {
 
     public void setMotDePasse(String motDePasse) {
         this.motDePasse = motDePasse;
+    }
+
+    public String getPhoto() {
+        return photo;
+    }
+
+    public void setPhoto(String photo) {
+        this.photo = photo;
     }
 
     @Override

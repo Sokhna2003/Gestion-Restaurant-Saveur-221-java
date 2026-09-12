@@ -12,6 +12,7 @@ public class Utilisateur {
     private String prenom;
     private String email;
     private String motDePasse; // stocké haché en base, jamais en clair
+    private String photo;
     private RoleType role;
     private boolean actif;
 
@@ -20,11 +21,17 @@ public class Utilisateur {
 
     public Utilisateur(int id, String nom, String prenom, String email,
                         String motDePasse, RoleType role, boolean actif) {
+        this(id, nom, prenom, email, motDePasse, null, role, actif);
+    }
+
+    public Utilisateur(int id, String nom, String prenom, String email,
+                       String motDePasse, String photo, RoleType role, boolean actif) {
         this.id = id;
         this.nom = nom;
         this.prenom = prenom;
         this.email = email;
         this.motDePasse = motDePasse;
+        this.photo = photo;
         this.role = role;
         this.actif = actif;
     }
@@ -67,6 +74,14 @@ public class Utilisateur {
 
     public void setMotDePasse(String motDePasse) {
         this.motDePasse = motDePasse;
+    }
+
+    public String getPhoto() {
+        return photo;
+    }
+
+    public void setPhoto(String photo) {
+        this.photo = photo;
     }
 
     public RoleType getRole() {

@@ -4,6 +4,7 @@ import com.saveur221.entities.Categorie;
 import com.saveur221.entities.Produit;
 
 import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -12,6 +13,9 @@ import java.util.List;
  * droit d'appeler la couche Service (contrainte du prof).
  */
 public class ProduitView {
+
+    private static final DateTimeFormatter FORMAT_DATE =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     public int demanderChoixProduits() {
         ConsoleUtils.afficherTitre("Gestion des produits");
@@ -22,7 +26,10 @@ public class ProduitView {
         System.out.println("5. Voir les produits disponibles");
         System.out.println("6. Voir les produits indisponibles");
         System.out.println("7. Modifier un produit");
-        System.out.println("8. Supprimer un produit");
+        System.out.println("8. Supprimer un produit (corbeille)");
+        System.out.println("9. Voir les produits en corbeille");
+        System.out.println("10. Restaurer un produit");
+        System.out.println("11. Supprimer définitivement un produit");
         System.out.println("0. Retour au menu principal");
         return ConsoleUtils.lireEntier("Votre choix : ");
     }
@@ -160,11 +167,17 @@ public class ProduitView {
     }
 
     private void afficherLigneProduit(Produit p) {
-        System.out.printf("[%d] %s | %.2f | stock: %d (seuil: %d) | %s | %s | %s%n",
+        System.out.printf("[%d] %s | %.2f | stock: %d (seuil: %d) | %s | %s | %s%s%n",
                 p.getId(), p.getLibelle(), p.getPrix(), p.getQuantiteStock(), p.getSeuilAlerte(),
                 p.getCategorie().getNom(),
                 p.isDisponible() ? "disponible" : "indisponible",
-                p.isEnRupture() ? "RUPTURE" : (p.isStockFaible() ? "stock faible" : "stock ok"));
+                p.isEnRupture() ? "RUPTURE" : (p.isStockFaible() ? "stock faible" : "stock ok"),
+                p.getSupprimeLe() == null ? ""
+                        : " | supprimé le " + p.getSupprimeLe().format(FORMAT_DATE));
+    }
+
+    public boolean confirmerSuppressionDefinitive() {
+        return ConsoleUtils.lireTexte("Confirmer la suppression définitive ? (o/N) > ").equalsIgnoreCase("o");
     }
 
     public void afficherMessage(String message) {

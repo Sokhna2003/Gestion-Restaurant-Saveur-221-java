@@ -11,7 +11,7 @@ Partage la même base de données MySQL que le Module B (PHP Web).
 
 ## Configuration de la base de données
 
-1. Crée la base en exécutant `database/script.sql` (fourni avec le Module PHP) dans phpMyAdmin ou en ligne de commande MySQL. Ça crée la base **`restaurant_saveur221`** avec ses 9 tables et quelques données de départ (2 rôles, 1 compte admin, 3 catégories).
+1. Crée la base en exécutant `script.sql` (à la racine du projet, aligné sur le schéma partagé avec le Module PHP) dans phpMyAdmin ou en ligne de commande MySQL. Ça crée la base **`restaurant_saveur221`** avec ses 9 tables (rôles, utilisateurs, clients, catégories, produits, commandes, ligne_commandes, paiements, avis) et quelques données de départ (2 rôles, 1 compte admin, 6 utilisateurs, 3 catégories, 9 produits, 3 clients, 4 commandes).
 2. Si tes identifiants MySQL diffèrent de `root` sans mot de passe (par défaut sur XAMPP), adapte-les dans :
    `src/main/java/com/saveur221/config/DatabaseConfig.java`
 
@@ -68,8 +68,12 @@ connexion base de données.
 
 - **Authentification** : connexion par email/mot de passe (haché SHA-256),
   vérification du compte actif, droits selon le rôle (ADMIN/GERANT)
-- **Catégories** : CRUD complet, suppression bloquée si des produits l'utilisent
-- **Produits** : CRUD complet, recherche, filtrage par catégorie/disponibilité
+- **Catégories** : CRUD complet, suppression en corbeille (soft delete),
+  suppression bloquée si des produits actifs l'utilisent, restauration et
+  suppression définitive depuis la corbeille
+- **Produits** : CRUD complet, recherche, filtrage par catégorie/disponibilité,
+  suppression en corbeille (soft delete) avec restauration et suppression
+  définitive (bloquée si le produit apparaît dans l'historique des commandes)
 - **Stock** : approvisionnement, seuil d'alerte, produits en stock faible/rupture
   (un produit à 0 en stock devient automatiquement indisponible)
 - **Commandes** *(consultées et gérées côté Java, créées côté client PHP)* :
