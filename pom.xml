@@ -26,6 +26,13 @@
             <version>9.7.0</version>
         </dependency>
 
+        <!-- Bcrypt : la base partagee avec PHP stocke les mots de passe en bcrypt -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
+
         <!-- Tests unitaires -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
